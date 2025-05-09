@@ -1,10 +1,12 @@
 import argparse
 import json
 import logging
-import os
 import sys
 
-BDE_PATH = '../bde/bde.json'
+from confluent_kafka import Producer
+
+from ..extra.callbalcks import delivery_report
+from ..extra.constants import GOODS_TOPIC
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +19,13 @@ parser = argparse.ArgumentParser(
 parser.add_argument('filename')
 args = parser.parse_args()
 
+conf = {
+    "bootstrap.servers": "127.0.0.1:9094,127.0.0.1:9095,127.0.0.1:9096",
+    "acks": "all",
+    "retries": 5,
+}
+producer = Producer(conf)
+
 if not args.filename:
     logger.error('no file')
     sys.exit(1)
@@ -28,14 +37,6 @@ if not args.filename.endswith('.json'):
 with open(args.filename, 'r') as f:
     accept = json.load(f)
 
-with open(BDE_PATH, 'r+', encoding='utf-8') as f:
-    bde = {'items': []}
-    try:
-        bde = json.load(f)
-    except json.decoder.JSONDecodeError as e:
-        logger.error('failed reading json', e)
-        sys.exit(1)
-    bde['items'].append(accept)
-    f.seek(0)
-    json.dump(bde, f, indent=4, ensure_ascii=False)
-    logger.info('wrote to bde')
+producer.produce(topic=GOODS_TOPIC, value=accept, callback=delivery_report)
+producer.flush()
+logger.info(f'item sent to {GOODS_TOPIC}')
