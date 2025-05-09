@@ -190,12 +190,15 @@ services:
       CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081/'
       CONNECT_PLUGIN_PATH: /usr/share/java,/etc/kafka-connect/jars
+      CONNECT_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/connect.keystore.jks
+      CONNECT_SSL_KEYSTORE_PASSWORD: your-password
+      CONNECT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/connect.truststore.jks
+      CONNECT_SSL_TRUSTSTORE_PASSWORD: your-password
     volumes:
       - ./confluent-hub-components/:/etc/kafka-connect/jars
     networks:
-      - proxynet
+      - kafka-connect-network
   
   hadoop-namenode:
     image: apache/hadoop:3.4.1
