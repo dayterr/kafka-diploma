@@ -3,7 +3,7 @@ import logging
 
 import faust
 
-from .extra.constants import (BDE_PATH, BLOCKED_GOODS,
+from extra.constants import (BDE_PATH, BLOCKED_GOODS,
                               FILTERED_GOODS_TOPIC,
                               GOODS_TOPIC)
 
@@ -34,3 +34,4 @@ async def censor_goods(stream):
                     logger.error('failed reading json', e)
                 bde['items'].append(item)
                 await filtered_goods.send(value=bde)
+                logger.info(f'товар отправлен в топик {filtered_goods}')
