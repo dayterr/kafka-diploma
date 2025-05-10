@@ -1,5 +1,6 @@
 import json
 import logging
+import ssl
 
 import faust
 
@@ -11,10 +12,20 @@ GOODS_TOPIC = 'goods'
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+ssl_context = ssl.create_default_context(
+    purpose=ssl.Purpose.SERVER_AUTH, cafile='ca.pem')
+ssl_context.load_cert_chain('kafka.crt', keyfile='kafka.key')
+
 app = faust.App(
     'my-faust-app',
-    broker="127.0.0.1:9093,127.0.0.1:9094,127.0.0.1:9095",
-    value_serializer='raw'
+    broker="kafka-0:9092,kafka-1:9094,kafka-2:9096",
+    value_serializer='raw',
+    broker_credentials=faust.auth.SASLCredentials(
+        username='alice',
+        password='alice-secret',
+        ssl_context=ssl_context,
+    )
+
 )
 
 goods = app.topic(GOODS_TOPIC)
