@@ -29,6 +29,7 @@ services:
     ports:
       - 9092:9092
       - 9093:9093
+      - 9091:9091
     volumes:
       #- data-kafka-0:/var/lib/kafka/data
       #- ./kafka-1-creds:/etc/kafka/jaas
@@ -63,6 +64,8 @@ services:
       KAFKA_SUPER_USERS: "User:admin;User:ANONYMOUS"
       KAFKA_SASL_MECHANISM_CONTROLLER_PROTOCOL: PLAIN
       KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_MESSAGE_MAX_BYTES: 469296129
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 209715200
 
 
   kafka-1:
@@ -76,6 +79,7 @@ services:
     ports:
       - 9094:9094
       - 9095:9095
+      - 9096:9096
       #- "127.0.0.1:9094:9094"
     volumes:
       #- data-kafka-1:/var/lib/kafka/data
@@ -111,6 +115,8 @@ services:
       KAFKA_SUPER_USERS: "User:admin;User:ANONYMOUS"
       KAFKA_SASL_MECHANISM_CONTROLLER_PROTOCOL: PLAIN
       KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_MESSAGE_MAX_BYTES: 469296129
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 209715200
 
 
   kafka-2:
@@ -158,6 +164,48 @@ services:
       KAFKA_SUPER_USERS: "User:admin;User:ANONYMOUS"
       KAFKA_SASL_MECHANISM_CONTROLLER_PROTOCOL: PLAIN
       KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+
+  zookeeper2:
+    image: confluentinc/cp-zookeeper:7.4.0
+    hostname: zookeeper2
+    container_name: zookeeper2
+    ports:
+     - "2182:2182"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      confluent:
+
+  broker2:
+    image: confluentinc/cp-server:7.4.0
+    hostname: broker2
+    container_name: broker2
+    depends_on:
+     - zookeeper2
+    ports:
+     - "9083:9083"
+     - "9102:9102"
+    environment:
+     KAFKA_BROKER_ID: 2
+     KAFKA_ZOOKEEPER_CONNECT: 'zookeeper2:2182'
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:29093,PLAINTEXT_HOST://localhost:9083
+     KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+     KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+     KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+     KAFKA_JMX_PORT: 9102
+     KAFKA_JMX_HOSTNAME: localhost
+     CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker2:29093
+     CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+     CONFLUENT_METRICS_ENABLE: 'true'
+     CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    networks:
+      confluent:
     
   kafka-connect:
     build:
@@ -171,7 +219,7 @@ services:
       - kafka-1
       - kafka-2
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: kafka-0:9091,kafka-1:9096,kafka-2:9099
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka-0:9093,kafka-1:9095,kafka-2:9098'
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: 'kafka-connect'
       CONNECT_REST_ADVERTISED_HOST_NAME: 'localhost'
@@ -188,16 +236,15 @@ services:
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_PLUGIN_PATH: /usr/share/java,/etc/kafka-connect/jars
-      CONNECT_REQUEST_TIMEOUT_MS: 600000
-      #CONNECT_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka.keystore.pkcs12
-      #CONNECT_SSL_KEYSTORE_PASSWORD: your-password
+      CONNECT_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka.keystore.pkcs12
+      CONNECT_SSL_KEYSTORE_PASSWORD: your-password
       CONNECT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka.truststore.jks
       CONNECT_SSL_TRUSTSTORE_PASSWORD: your-password
       CONNECT_SSL_KEYSTORE_TYPE: PKCS12
       CONNECT_SSL_TRUSTSTORE_TYPE: JKS
       CONNECT_SSL_KEYSTORE_FILENAME: kafka.kafka.keystore.pkcs12
       CONNECT_SSL_KEYSTORE_CREDENTIALS: kafka_keystore_creds
-      #CONNECT_SSL_KEY_CREDENTIALS: kafka_sslkey_creds
+      CONNECT_SSL_KEY_CREDENTIALS: kafka_sslkey_creds
       CONNECT_SSL_TRUSTSTORE_FILENAME: kafka.kafka.truststore.jks
       CONNECT_SSL_TRUSTSTORE_CREDENTIALS: kafka_truststore_creds
       CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"

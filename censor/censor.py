@@ -18,11 +18,11 @@ ssl_context.load_cert_chain('kafka.crt', keyfile='kafka.key')
 
 app = faust.App(
     'my-faust-app',
-    broker="kafka-0:9092,kafka-1:9094,kafka-2:9096",
+    broker="localhost:9092,localhost:9093,localhost:9094,localhost:9095,localhost:9097,localhost:9098",
     value_serializer='raw',
     broker_credentials=faust.auth.SASLCredentials(
-        username='alice',
-        password='alice-secret',
+        username='admin',
+        password='admin-secret',
         ssl_context=ssl_context,
     )
 
