@@ -18,7 +18,7 @@ def delivery_report(err, msg):
 
 
 conf = {
-    "bootstrap.servers": "kafka-0:9092,kafka-1:9092,kafka-2:9092",
+    "bootstrap.servers": "localhost:9092,localhost:9093,localhost:9094,localhost:9095,localhost:9097,localhost:9098",
     "acks": "1",
     "retries": 5,
 

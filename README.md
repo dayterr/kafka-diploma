@@ -45,7 +45,7 @@ kafka-topics --bootstrap-server localhost:9092 --topic goods --create --partitio
 ```
 
 ```
-kafka-topics --bootstrap-server localhost:9092 --topic filtered_goods --create --partitions 1 --replication-factor 1 --command-config prop.cfg
+kafka-topics --bootstrap-server localhost:9092 --topic filtered-goods --create --partitions 1 --replication-factor 1 --command-config prop.cfg
 ```
 
 ```
@@ -72,3 +72,7 @@ kafka-acls --bootstrap-server localhost:9092 \
 ```
 
 ## Запуск SHOP API
+
+Описано [здесь](https://github.com/dayterr/kafka-diploma/blob/main/shop/README.md)
+
+## Запуск censor
