@@ -3,9 +3,10 @@ import logging
 
 import faust
 
-from extra.constants import (BDE_PATH, BLOCKED_GOODS,
-                              FILTERED_GOODS_TOPIC,
-                              GOODS_TOPIC)
+BDE_PATH = '../bde/bde.json'
+BLOCKED_GOODS = ('Оружие', 'Алкоголь')
+FILTERED_GOODS_TOPIC = 'filtered_goods'
+GOODS_TOPIC = 'goods'
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
