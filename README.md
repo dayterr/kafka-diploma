@@ -41,19 +41,19 @@ ssl.endpoint.identification.algorithm=' >> prop.cfg
 
 создать топики. команда:  
 ```
-kafka-topics --bootstrap-server localhost:9092 --topic goods --create --partitions 1 --replication-factor 1 --command-config prop.cfg
+kafka-topics --bootstrap-server localhost:9092 --topic goods --create --partitions 1 --replication-factor 1
 ```
 
 ```
-kafka-topics --bootstrap-server localhost:9092 --topic filtered-goods --create --partitions 1 --replication-factor 1 --command-config prop.cfg
+kafka-topics --bootstrap-server localhost:9092 --topic filtered-goods --create --partitions 1 --replication-factor 1
 ```
 
 ```
-kafka-topics --bootstrap-server localhost:9092 --topic queries --create --partitions 1 --replication-factor 1 --command-config prop.cfg
+kafka-topics --bootstrap-server localhost:9092 --topic queries --create --partitions 1 --replication-factor 1
 ```
 
 ```
-kafka-topics --bootstrap-server localhost:9092 --topic recommendations --create --partitions 1 --replication-factor 1 --command-config prop.cfg
+kafka-topics --bootstrap-server localhost:9092 --topic recommendations --create --partitions 1 --replication-factor 1
 ```
 
 дать права. команда:  
@@ -67,8 +67,7 @@ kafka-acls --bootstrap-server localhost:9092 \
 --topic goods \
 --topic filtered_goods \
 --topic queries \
---topic recommendations \
---command-config prop.cfg
+--topic recommendations
 ```
 
 ## Запуск SHOP API

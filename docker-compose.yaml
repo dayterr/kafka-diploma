@@ -13,7 +13,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
       KAFKA_OPTS: -Djava.security.auth.login.config=/etc/zookeeper/secrets/zookeeper.sasl.jaas.conf
        -Dzookeeper.authProvider.sasl=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
-       -Dzookeeper.allowSaslFailedClients=false
+       -Dzookeeper.allowSaslFailedClients=true
        -Dzookeeper.requireClientAuthScheme=sasl
     ports:
       - 2181:2181
@@ -177,6 +177,23 @@ services:
     networks:
       confluent:
 
+  broker:
+    image: confluentinc/cp-server:7.4.0
+    hostname: broker
+    container_name: broker
+    depends_on:
+     - zookeeper2
+    ports:
+     - "9082:9082"
+     - "9102:9102"
+    environment:
+     KAFKA_BROKER_ID: 4
+     KAFKA_ZOOKEEPER_CONNECT: 'zookeeper2:2182'
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9082
+    networks:
+      confluent:
+
   broker2:
     image: confluentinc/cp-server:7.4.0
     hostname: broker2
@@ -185,25 +202,64 @@ services:
      - zookeeper2
     ports:
      - "9083:9083"
-     - "9102:9102"
+     - "9103:9103"
     environment:
-     KAFKA_BROKER_ID: 2
+     KAFKA_BROKER_ID: 5
      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper2:2182'
      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:29093,PLAINTEXT_HOST://localhost:9083
-     KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-     KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-     KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
-     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-     KAFKA_JMX_PORT: 9102
-     KAFKA_JMX_HOSTNAME: localhost
-     CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker2:29093
-     CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-     CONFLUENT_METRICS_ENABLE: 'true'
-     CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    networks:
+      confluent:
+
+  broker3:
+    image: confluentinc/cp-server:7.4.0
+    hostname: broker3
+    container_name: broker3
+    depends_on:
+     - zookeeper2
+    ports:
+     - "9084:9084"
+     - "9104:9104"
+    environment:
+     KAFKA_BROKER_ID: 6
+     KAFKA_ZOOKEEPER_CONNECT: 'zookeeper2:2182'
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:29094,PLAINTEXT_HOST://localhost:9084
+    networks:
+      confluent:
+
+  topic-creation:
+    image: confluentinc/cp-kafka
+    command: bash -c "cub kafka-ready -z zookeeper:2181 1 30 && kafka-topics --zookeeper zookeeper:2181 --create --topic topic-to-mirror --partitions 10 --replication-factor 1"
+    depends_on:
+     - zookeeper
+    networks:
+      confluent:
+
+  dummy-generation:
+    image: confluentinc/cp-kafka
+    command: bash -c "cub kafka-ready -z zookeeper:2181 1 30 && sleep 5 && seq 10000 | kafka-console-producer --broker-list kafka-0:9091 --topic topic-to-mirror"
+    depends_on:
+     - zookeeper
+     - kafka-0
+    networks:
+      confluent:
+
+  mirror-maker:
+    image: confluentinc/cp-kafka
+    volumes:
+     - ./consumer.cfg:/etc/consumer.cfg
+     - ./producer.cfg:/etc/producer.cfg
+    command: bash -c "cub kafka-ready -z zookeeper:2181 1 30 && cub kafka-ready -z zookeeper2:2182 1 30 && kafka-mirror-maker --consumer.config /etc/consumer.cfg --producer.config /etc/producer.cfg --whitelist topic-to-mirror --num.streams 1"
+    depends_on:
+     - zookeeper
+     - zookeeper2
+     - kafka-0
+     - kafka-1
+     - kafka-2
+     - broker
+     - broker2
+     - broker3
     networks:
       confluent:
     
@@ -219,7 +275,7 @@ services:
       - kafka-1
       - kafka-2
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: 'kafka-0:9093,kafka-1:9095,kafka-2:9098'
+      CONNECT_BOOTSTRAP_SERVERS: kafka-0:9091
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: 'kafka-connect'
       CONNECT_REST_ADVERTISED_HOST_NAME: 'localhost'
@@ -229,32 +285,44 @@ services:
       CONNECT_CONFIG_STORAGE_TOPIC: 'connect-config-storage'
       CONNECT_OFFSET_STORAGE_TOPIC: 'connect-offset-storage'
       CONNECT_STATUS_STORAGE_TOPIC: 'connect-status-storage'
-      CONNECT_SECURITY_PROTOCOL: SASL_SSL
-      CONNECT_SASL_MECHANISM: PLAIN
+      #CONNECT_SECURITY_PROTOCOL: SASL_SSL
+      #CONNECT_SASL_MECHANISM: PLAIN
       CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_PLUGIN_PATH: /usr/share/java,/etc/kafka-connect/jars
-      CONNECT_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka.keystore.pkcs12
-      CONNECT_SSL_KEYSTORE_PASSWORD: your-password
-      CONNECT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka.truststore.jks
-      CONNECT_SSL_TRUSTSTORE_PASSWORD: your-password
-      CONNECT_SSL_KEYSTORE_TYPE: PKCS12
-      CONNECT_SSL_TRUSTSTORE_TYPE: JKS
-      CONNECT_SSL_KEYSTORE_FILENAME: kafka.kafka.keystore.pkcs12
-      CONNECT_SSL_KEYSTORE_CREDENTIALS: kafka_keystore_creds
-      CONNECT_SSL_KEY_CREDENTIALS: kafka_sslkey_creds
-      CONNECT_SSL_TRUSTSTORE_FILENAME: kafka.kafka.truststore.jks
-      CONNECT_SSL_TRUSTSTORE_CREDENTIALS: kafka_truststore_creds
-      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
-      CONNECT_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required \
-        username=\"alice\" \
-        password=\"alice-secret\";"
+      CONNECT_PLUGIN_PATH: /etc/kafka-connect/jars
+      #CONNECT_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka.keystore.pkcs12
+      #CONNECT_SSL_KEYSTORE_PASSWORD: your-password
+      #CONNECT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka.truststore.jks
+      #CONNECT_SSL_TRUSTSTORE_PASSWORD: your-password
+      #CONNECT_SSL_KEYSTORE_TYPE: PKCS12
+      #CONNECT_SSL_TRUSTSTORE_TYPE: JKS
+      #CONNECT_SSL_KEYSTORE_FILENAME: kafka.kafka.keystore.pkcs12
+      #CONNECT_SSL_KEYSTORE_CREDENTIALS: kafka_keystore_creds
+      #CONNECT_SSL_KEY_CREDENTIALS: kafka_sslkey_creds
+      #CONNECT_SSL_TRUSTSTORE_FILENAME: kafka.kafka.truststore.jks
+      #CONNECT_SSL_TRUSTSTORE_CREDENTIALS: kafka_truststore_creds
+      #CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
+      #CONNECT_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required \
+      #  username=\"admin\" \
+      #  password=\"admin-secret\";"
+      #CONNECT_PRODUCER_SASL_MECHANISM: 'PLAIN'
+      #CONNECT_CONSUMER_SASL_MECHANISM: 'PLAIN'  
+      #CONNECT_PRODUCER_SECURITY_PROTOCOL: 'SASL_SSL'
+      #CONNECT_CONSUMER_SECURITY_PROTOCOL: 'SASL_SSL'
+      #CONNECT_PRODUCER_SSL_TRUSTSTORE_LOCATION: 'kafka.kafka.truststore.jks'
+      #CONNECT_CONSUMER_SSL_TRUSTSTORE_LOCATION: 'kafka.kafka.truststore.jks'
+      #CONNECT_PRODUCER_SSL_TRUSTSTORE_PASSWORD: your-password
+      #CONNECT_CONSUMER_SSL_TRUSTSTORE_PASSWORD: your-password
+      #CONNECT_PRODUCER_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";"
+      #CONNECT_CONSUMER_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";"
     volumes:
+      - ./confluent-hub-components/connect-file-3.9.0.jar:/etc/kafka-connect/jars/connect-file-3.9.0.jar
       - ./confluent-hub-components/:/etc/kafka-connect/jars
       - ./kafka-0-creds:/etc/kafka/secrets
       - ./kafka_server_jaas.conf:/etc/kafka/config/kafka_server_jaas.conf
+      - ./bbde:/tmp
     networks:
       confluent:
 

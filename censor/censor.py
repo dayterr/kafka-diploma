@@ -9,6 +9,8 @@ BLOCKED_GOODS = ('Оружие', 'Алкоголь')
 FILTERED_GOODS_TOPIC = 'filtered_goods'
 GOODS_TOPIC = 'goods'
 
+custom_sep = '\n'
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -35,15 +37,16 @@ filtered_goods = app.topic(FILTERED_GOODS_TOPIC)
 @app.agent(goods)
 async def censor_goods(stream):
     async for item in stream:
+        if isinstance(item, bytes):
+            item = item.decode('utf-8')
+            logger.info('json decoded')
+        try:
+            item = json.loads(item)  
+            logger.info('json loaded success')
+        except json.JSONDecodeError as e:
+            logger.error(f"Ошибка декодирования JSON: {e}")
         if item['category'] in BLOCKED_GOODS:
             logger.info('запрещённый к продаже товар')
         else:
-            with open(BDE_PATH, 'r+', encoding='utf-8') as f:
-                bde = {'items': []}
-                try:
-                    bde = json.load(f)
-                except json.decoder.JSONDecodeError as e:
-                    logger.error('failed reading json', e)
-                bde['items'].append(item)
-                await filtered_goods.send(value=bde)
-                logger.info(f'товар отправлен в топик {filtered_goods}')
+            await filtered_goods.send(value=json.dumps(item, ensure_ascii=False).encode('utf-8'))
+            logger.info(f'товар отправлен в топик {filtered_goods}')
