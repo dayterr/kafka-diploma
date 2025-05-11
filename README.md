@@ -70,14 +70,21 @@ kafka-acls --bootstrap-server localhost:9092 \
 --topic recommendations
 ```
 
+## Запуск bde
+
+Описано [здесь](https://github.com/dayterr/kafka-diploma/blob/main/bde/README.md)
+
+
 ## Запуск SHOP API
 
 Описано [здесь](https://github.com/dayterr/kafka-diploma/blob/main/shop/README.md)
+
 
 ## Запуск censor
 
 Описано [здесь](https://github.com/dayterr/kafka-diploma/blob/main/censor/README.md)
 
-## Запуск bde
 
-Описано [здесь](https://github.com/dayterr/kafka-diploma/blob/main/bde/README.md)
+## Запуск CLIENT API
+
+Описано [здесь](https://github.com/dayterr/kafka-diploma/blob/main/client/README.md)
