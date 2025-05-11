@@ -36,7 +36,8 @@ services:
       - ./kafka-0-creds:/etc/kafka/secrets
       - ./kafka_server_jaas.conf:/etc/kafka/config/kafka_server_jaas.conf
       # - ./kafka-0-cred/server.properties:/etc/kafka/server.properties
-      - shared-data:/data
+      - ./monitoring/jmx_prometheus_javaagent-0.20.0.jar:/usr/share/java/jmx_prometheus_javaagent.jar
+      - ./monitoring/kafka-metrics.yml:/usr/share/java/kafka-metrics.yml
     environment:
       KAFKA_BROKER_ID: 0
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -56,7 +57,8 @@ services:
       KAFKA_SSL_KEYSTORE_PASSWORD: your-password
       KAFKA_SSL_TRUSTSTORE_PASSWORD: your-password
       KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/config/kafka_server_jaas.conf"
+      KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/config/kafka_server_jaas.conf
+        -javaagent:/usr/share/java/jmx_prometheus_javaagent.jar=7071:/usr/share/java/kafka-metrics.yml
       KAFKA_LISTENER_NAME_BROKER_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_ZOOKEEPER_SET_ACL: true
@@ -87,7 +89,8 @@ services:
       - ./kafka-1-creds:/etc/kafka/secrets
       - ./kafka_server_jaas.conf:/etc/kafka/config/kafka_server_jaas.conf
       # - ./kafka-1-cred/server.properties:/etc/kafka/server.properties
-      - shared-data:/data
+      - ./monitoring/jmx_prometheus_javaagent-0.20.0.jar:/usr/share/java/jmx_prometheus_javaagent.jar
+      - ./monitoring/kafka-metrics.yml:/usr/share/java/kafka-metrics.yml
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -107,7 +110,8 @@ services:
       KAFKA_SSL_KEYSTORE_PASSWORD: your-password
       KAFKA_SSL_TRUSTSTORE_PASSWORD: your-password
       KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/config/kafka_server_jaas.conf"
+      KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/config/kafka_server_jaas.conf
+        -javaagent:/usr/share/java/jmx_prometheus_javaagent.jar=7071:/usr/share/java/kafka-metrics.yml
       KAFKA_LISTENER_NAME_BROKER_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_ZOOKEEPER_SET_ACL: true
@@ -136,7 +140,8 @@ services:
       - ./kafka-2-creds:/etc/kafka/secrets
       - ./kafka_server_jaas.conf:/etc/kafka/config/kafka_server_jaas.conf
       # - ./kafka-2-cred/server.properties:/etc/kafka/server.properties
-      - shared-data:/data
+      - ./monitoring/jmx_prometheus_javaagent-0.20.0.jar:/usr/share/java/jmx_prometheus_javaagent.jar
+      - ./monitoring/kafka-metrics.yml:/usr/share/java/kafka-metrics.yml
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -156,7 +161,8 @@ services:
       KAFKA_SSL_KEYSTORE_PASSWORD: your-password
       KAFKA_SSL_TRUSTSTORE_PASSWORD: your-password
       KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/config/kafka_server_jaas.conf"
+      KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/config/kafka_server_jaas.conf
+        -javaagent:/usr/share/java/jmx_prometheus_javaagent.jar=7071:/usr/share/java/kafka-metrics.yml
       KAFKA_LISTENER_NAME_BROKER_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_ZOOKEEPER_SET_ACL: true

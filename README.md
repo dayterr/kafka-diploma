@@ -9,15 +9,6 @@
 
 Описаны [здесь](https://github.com/dayterr/kafka-diploma/blob/main/kafka-connect/README.md)
 
-## Добавление хостов
-
-Нужно добавить в `/etc/hosts` следующие хосты:
-
-```
-172.23.0.21      kafka-1
-172.23.0.20      kafka-0
-172.23.0.23      kafka-2
-```
 
 ## Создание топиков
 
