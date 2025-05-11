@@ -431,6 +431,30 @@ services:
    command: ["hdfs", "datanode"]
    networks:
       confluent:
+  
+  spark-master:
+    image: bitnami/spark:3.5.4
+    container_name: spark-master
+    ports:
+     - "7077:7077"  # Порт для подключения Executors
+     - "8080:8080"  # HTTP-порт для Web UI Apache Spark master
+    environment:
+      SPARK_MODE: master
+    networks:
+      confluent:
+
+  spark-worker:
+    image: bitnami/spark:3.5.4
+    container_name: spark-worker
+    depends_on:
+     - spark-master
+    ports:
+     - "8081:8081"  # HTTP-порт для Web UI Apache Spark worker
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+    networks:
+      confluent:
 
 volumes:
   shared-data:
